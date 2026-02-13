@@ -73,16 +73,20 @@
             text-rendering: optimizeLegibility;
           }
 
-  .marquee {
+.marquee {
   overflow: hidden;
   width: 100%;
+ display: block;
 }
 
 .marquee-track {
   display: flex;
   gap: 25px;
   width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
 }
+
 
 
 .logo-box {
@@ -728,22 +732,50 @@ a,
     
   </div>
 </div>
-<script>
+<!-- <script>
 const track = document.getElementById("marqueeTrack");
 
 track.innerHTML += track.innerHTML;
 
 let position = 0;
-const speed = 0.9;
-const totalWidth = track.scrollWidth / 2;
+const speed = 0.8;
 
-function animate() {
-  position -= speed;
-  if (position <= -totalWidth) {
-    position += totalWidth;
+window.addEventListener("load", () => {
+  const totalWidth = track.scrollWidth / 2;
+
+  function animate() {
+    position -= speed;
+
+    // Perfect seamless reset
+    if (Math.abs(position) >= totalWidth) {
+      position = 0;
+    }
+
+    track.style.transform = `translate3d(${position}px, 0, 0)`;
+    requestAnimationFrame(animate);
   }
 
-  track.style.transform = `translateX(${position}px)`;
+  animate();
+});
+</script> -->
+<script>
+const marquee = document.querySelector(".marquee");
+const track = document.getElementById("marqueeTrack");
+
+let speed = 0.8;
+
+function animate() {
+  marquee.scrollLeft += speed;
+
+  // Jab first logo pura bahar chala jaye
+  const firstItem = track.children[0];
+  const itemWidth = firstItem.offsetWidth + 25; // gap included
+
+  if (marquee.scrollLeft >= itemWidth) {
+    marquee.scrollLeft -= itemWidth;
+    track.appendChild(firstItem);
+  }
+
   requestAnimationFrame(animate);
 }
 
