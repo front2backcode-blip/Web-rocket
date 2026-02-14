@@ -1615,48 +1615,55 @@ a,
 
 <script>
 (function () {
-  let marqueeList, marqueeWrapper;
-  let animationId = null;
+  let marqueeWrapper, marqueeList;
+  let initialized = false;
+
+  function imagesLoaded(container, callback) {
+    const images = container.querySelectorAll('img');
+    let loaded = 0;
+
+    if (!images.length) callback();
+
+    images.forEach(img => {
+      if (img.complete) {
+        loaded++;
+        if (loaded === images.length) callback();
+      } else {
+        img.addEventListener('load', () => {
+          loaded++;
+          if (loaded === images.length) callback();
+        });
+      }
+    });
+  }
 
   function initInfiniteMarquee() {
     marqueeWrapper = document.querySelector('.logos-slider_list-wrapper');
     marqueeList = document.querySelector('.logos-slider_list');
     if (!marqueeWrapper || !marqueeList) return;
 
-    // reset
-    marqueeList.style.animation = 'none';
+    if (initialized) return; // 🔥 STOP re-init (mobile fix)
+    initialized = true;
 
     const originalItems = Array.from(marqueeList.children);
     if (!originalItems.length) return;
 
-    // remove old clones
-    marqueeList.innerHTML = '';
-    originalItems.forEach(item => marqueeList.appendChild(item));
-
-    // clone once (important)
+    // clone once
     originalItems.forEach(item => {
       marqueeList.appendChild(item.cloneNode(true));
     });
 
-    // calculate width AFTER images loaded
-    let totalWidth = 0;
-    originalItems.forEach(item => {
-      totalWidth += item.offsetWidth;
-    });
+    // accurate width
+    const totalWidth = originalItems.reduce((sum, item) => {
+      return sum + item.getBoundingClientRect().width;
+    }, 0);
 
-    // speed responsive
     const duration =
       window.innerWidth < 768
-        ? Math.max(12, totalWidth / 80)
+        ? Math.max(14, totalWidth / 70)
         : Math.max(18, totalWidth / 120);
 
-    // dynamic keyframes
-    const styleId = 'marquee-keyframes';
-    let style = document.getElementById(styleId);
-    if (style) style.remove();
-
-    style = document.createElement('style');
-    style.id = styleId;
+    const style = document.createElement('style');
     style.textContent = `
       @keyframes infiniteScroll {
         from { transform: translateX(0); }
@@ -1665,19 +1672,22 @@ a,
     `;
     document.head.appendChild(style);
 
+    marqueeList.style.display = 'flex';
     marqueeList.style.animation = `infiniteScroll ${duration}s linear infinite`;
     marqueeList.style.willChange = 'transform';
 
     marqueeWrapper.style.overflow = 'hidden';
   }
 
-  window.addEventListener('load', initInfiniteMarquee);
-  window.addEventListener('resize', () => {
-    clearTimeout(animationId);
-    animationId = setTimeout(initInfiniteMarquee, 300);
+  window.addEventListener('load', () => {
+    const list = document.querySelector('.logos-slider_list');
+    if (!list) return;
+
+    imagesLoaded(list, initInfiniteMarquee);
   });
 })();
 </script>
+
 
 </body>
 </html>
