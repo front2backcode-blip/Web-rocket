@@ -1631,7 +1631,6 @@ a,
     list.innerHTML = '';
     originalItems.forEach(item => list.appendChild(item));
 
-    // Important CSS fix for mobile
     list.style.display = "flex";
     list.style.flexWrap = "nowrap";
 
@@ -1641,20 +1640,18 @@ a,
 
     function startAnimation() {
 
-      let totalWidth = list.scrollWidth;
+      // 🔥 ORIGINAL WIDTH calculate karo
+      let originalWidth = 0;
+      originalItems.forEach(item => {
+        originalWidth += item.offsetWidth;
+      });
 
-      if (totalWidth === 0) return; // mobile safety
+      // 🔥 EXACT 2 SETS banao
+      originalItems.forEach(item => {
+        list.appendChild(item.cloneNode(true));
+      });
 
-      // Clone until enough width
-      while (totalWidth < wrapper.offsetWidth * 2) {
-        originalItems.forEach(item => {
-          list.appendChild(item.cloneNode(true));
-        });
-        totalWidth = list.scrollWidth;
-      }
-
-      const moveDistance = totalWidth / 2;
-      const duration = Math.max(15, moveDistance / 80);
+      const duration = Math.max(15, originalWidth / 80);
 
       const styleId = 'marquee-keyframes';
       let oldStyle = document.getElementById(styleId);
@@ -1665,7 +1662,7 @@ a,
       style.innerHTML = `
         @keyframes infiniteScroll {
           0% { transform: translate3d(0,0,0); }
-          100% { transform: translate3d(-${moveDistance}px,0,0); }
+          100% { transform: translate3d(-${originalWidth}px,0,0); }
         }
       `;
       document.head.appendChild(style);
@@ -1684,6 +1681,7 @@ a,
 
 })();
 </script>
+
 
 <!-- 
 <script>
