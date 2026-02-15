@@ -1711,11 +1711,7 @@ a,
     });
 
     // calculate width AFTER images loaded
-    let totalWidth = 0;
-    originalItems.forEach(item => {
-      totalWidth += item.offsetWidth;
-    });
-
+     let totalWidth = marqueeList.scrollWidth / 2;
     // speed responsive
     const duration =
       window.innerWidth < 768
