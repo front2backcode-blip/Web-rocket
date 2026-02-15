@@ -1614,136 +1614,98 @@ a,
 </script> -->
 
 <script>
-(function () {
-
-  function initInfiniteMarquee() {
-
+(function() {
+  // Single, clean marquee implementation
+  function initMarquee() {
     const wrapper = document.querySelector('.logos-slider_list-wrapper');
     const list = document.querySelector('.logos-slider_list');
+    
     if (!wrapper || !list) return;
-
+    
+    // Clear any existing animations
     list.style.animation = 'none';
-
+    
+    // Get original items
     const originalItems = Array.from(list.children);
-    if (!originalItems.length) return;
-
-    // Reset
+    if (originalItems.length === 0) return;
+    
+    // Reset the list with original items only (remove any existing clones)
     list.innerHTML = '';
-    originalItems.forEach(item => list.appendChild(item));
-
-    // Important CSS fix for mobile
-    list.style.display = "flex";
-    list.style.flexWrap = "nowrap";
-
-    requestAnimationFrame(() => {
-      setTimeout(startAnimation, 100);
-    });
-
-    function startAnimation() {
-
-      let totalWidth = list.scrollWidth;
-
-      if (totalWidth === 0) return; // mobile safety
-
-      // Clone until enough width
-      while (totalWidth < wrapper.offsetWidth * 2) {
-        originalItems.forEach(item => {
-          list.appendChild(item.cloneNode(true));
-        });
-        totalWidth = list.scrollWidth;
-      }
-
-      const moveDistance = totalWidth / 2;
-      const duration = Math.max(15, moveDistance / 80);
-
-      const styleId = 'marquee-keyframes';
-      let oldStyle = document.getElementById(styleId);
-      if (oldStyle) oldStyle.remove();
-
-      const style = document.createElement('style');
-      style.id = styleId;
-      style.innerHTML = `
-        @keyframes infiniteScroll {
-          0% { transform: translate3d(0,0,0); }
-          100% { transform: translate3d(-${moveDistance}px,0,0); }
-        }
-      `;
-      document.head.appendChild(style);
-
-      list.style.animation = `infiniteScroll ${duration}s linear infinite`;
-      list.style.willChange = "transform";
-      wrapper.style.overflow = "hidden";
+    originalItems.forEach(item => list.appendChild(item.cloneNode(true)));
+    
+    // Calculate required clones
+    let totalWidth = list.scrollWidth;
+    const wrapperWidth = wrapper.offsetWidth;
+    
+    // Add clones until we have enough width for smooth scrolling
+    const clonesNeeded = Math.ceil((wrapperWidth * 2) / totalWidth) + 1;
+    
+    for (let i = 0; i < clonesNeeded; i++) {
+      originalItems.forEach(item => {
+        list.appendChild(item.cloneNode(true));
+      });
     }
-  }
-
-  window.addEventListener('load', initInfiniteMarquee);
-  window.addEventListener('resize', () => {
-    clearTimeout(window.marqueeResize);
-    window.marqueeResize = setTimeout(initInfiniteMarquee, 300);
-  });
-
-})();
-
-// 2nd loop
-
-(function () {
-  let marqueeList, marqueeWrapper;
-  let animationId = null;
-
-  function initInfiniteMarquee() {
-    marqueeWrapper = document.querySelector('.logos-slider_list-wrapper');
-    marqueeList = document.querySelector('.logos-slider_list');
-    if (!marqueeWrapper || !marqueeList) return;
-
-    // reset
-    marqueeList.style.animation = 'none';
-
-    const originalItems = Array.from(marqueeList.children);
-    if (!originalItems.length) return;
-
-    // remove old clones
-    marqueeList.innerHTML = '';
-    originalItems.forEach(item => marqueeList.appendChild(item));
-
-    // clone once (important)
-    originalItems.forEach(item => {
-      marqueeList.appendChild(item.cloneNode(true));
-    });
-
-    // calculate width AFTER images loaded
-     let totalWidth = marqueeList.scrollWidth / 2;
-    // speed responsive
-    const duration =
-      window.innerWidth < 768
-        ? Math.max(12, totalWidth / 80)
-        : Math.max(18, totalWidth / 120);
-
-    // dynamic keyframes
-    const styleId = 'marquee-keyframes';
-    let style = document.getElementById(styleId);
-    if (style) style.remove();
-
-    style = document.createElement('style');
-    style.id = styleId;
+    
+    // Calculate final width and duration
+    const finalWidth = list.scrollWidth / 2; // We only need to scroll half
+    const duration = Math.max(20, finalWidth / 50); // Smooth speed
+    
+    // Create or update keyframes
+    let style = document.getElementById('marquee-styles');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'marquee-styles';
+      document.head.appendChild(style);
+    }
+    
     style.textContent = `
-      @keyframes infiniteScroll {
-        from { transform: translateX(0); }
-        to { transform: translateX(-${totalWidth}px); }
+      @keyframes marqueeScroll {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-${finalWidth}px); }
       }
     `;
-    document.head.appendChild(style);
-
-    marqueeList.style.animation = `infiniteScroll ${duration}s linear infinite`;
-    marqueeList.style.willChange = 'transform';
-
-    marqueeWrapper.style.overflow = 'hidden';
+    
+    // Apply animation
+    list.style.animation = `marqueeScroll ${duration}s linear infinite`;
+    list.style.willChange = 'transform';
+    wrapper.style.overflow = 'hidden';
   }
-
-  window.addEventListener('load', initInfiniteMarquee);
-  window.addEventListener('resize', () => {
-    clearTimeout(animationId);
-    animationId = setTimeout(initInfiniteMarquee, 300);
+  
+  // Initialize on load
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMarquee);
+  } else {
+    initMarquee();
+  }
+  
+  // Handle resize with debounce
+  let resizeTimer;
+  window.addEventListener('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(initMarquee, 250);
   });
+  
+  // Handle images loading
+  const images = document.querySelectorAll('.logos-image');
+  let imagesLoaded = 0;
+  
+  function checkAllImagesLoaded() {
+    imagesLoaded++;
+    if (imagesLoaded === images.length) {
+      initMarquee();
+    }
+  }
+  
+  if (images.length > 0) {
+    images.forEach(img => {
+      if (img.complete) {
+        checkAllImagesLoaded();
+      } else {
+        img.addEventListener('load', checkAllImagesLoaded);
+        img.addEventListener('error', checkAllImagesLoaded);
+      }
+    });
+  }
 })();
 </script>
 </body>
