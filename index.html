@@ -654,6 +654,7 @@ a,
         </div>
         <div class="hero-bg"></div>
       </section>
+      
       <section class="logos-section">
         <div class="padding-section-medium">
           <div class="logos-flex-wrap">
@@ -1615,42 +1616,57 @@ a,
 
 <script>
 (function() {
-  // Single, clean marquee implementation
   function initMarquee() {
     const wrapper = document.querySelector('.logos-slider_list-wrapper');
     const list = document.querySelector('.logos-slider_list');
     
     if (!wrapper || !list) return;
     
-    // Clear any existing animations
+    // Clear existing animation
     list.style.animation = 'none';
     
     // Get original items
     const originalItems = Array.from(list.children);
     if (originalItems.length === 0) return;
     
-    // Reset the list with original items only (remove any existing clones)
+    // Store original items ka data
+    const itemWidths = [];
+    originalItems.forEach(item => {
+      itemWidths.push(item.offsetWidth);
+    });
+    
+    // Reset list
     list.innerHTML = '';
-    originalItems.forEach(item => list.appendChild(item.cloneNode(true)));
     
-    // Calculate required clones
-    let totalWidth = list.scrollWidth;
+    // Calculate exact clones needed
     const wrapperWidth = wrapper.offsetWidth;
+    let totalWidth = 0;
     
-    // Add clones until we have enough width for smooth scrolling
-    const clonesNeeded = Math.ceil((wrapperWidth * 2) / totalWidth) + 1;
+    // Pehle original items add karo
+    originalItems.forEach(item => {
+      const clone = item.cloneNode(true);
+      list.appendChild(clone);
+      totalWidth += clone.offsetWidth;
+    });
     
+    // Itne clones add karo ke total width wrapper se 3x ho jaye
+    const targetWidth = wrapperWidth * 3;
+    const clonesNeeded = Math.ceil(targetWidth / totalWidth);
+    
+    // Clones add karo
     for (let i = 0; i < clonesNeeded; i++) {
       originalItems.forEach(item => {
-        list.appendChild(item.cloneNode(true));
+        const clone = item.cloneNode(true);
+        list.appendChild(clone);
       });
     }
     
-    // Calculate final width and duration
-    const finalWidth = list.scrollWidth / 2; // We only need to scroll half
-    const duration = Math.max(20, finalWidth / 50); // Smooth speed
+    // Exact animation duration calculate karo
+    const singleSetWidth = totalWidth;
+    const totalWidthWithClones = list.scrollWidth;
+    const duration = (singleSetWidth / 50); // 50px per second speed
     
-    // Create or update keyframes
+    // Smooth keyframes banayein
     let style = document.getElementById('marquee-styles');
     if (!style) {
       style = document.createElement('style');
@@ -1661,42 +1677,55 @@ a,
     style.textContent = `
       @keyframes marqueeScroll {
         0% { transform: translateX(0); }
-        100% { transform: translateX(-${finalWidth}px); }
+        100% { transform: translateX(-${singleSetWidth}px); }
       }
     `;
     
-    // Apply animation
+    // Animation apply karo
     list.style.animation = `marqueeScroll ${duration}s linear infinite`;
     list.style.willChange = 'transform';
+    
+    // Performance optimization
+    list.style.backfaceVisibility = 'hidden';
+    list.style.webkitBackfaceVisibility = 'hidden';
+    
     wrapper.style.overflow = 'hidden';
+    // wrapper.style.maskImage = 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)';
+    // wrapper.style.webkitMaskImage = 'linear-gradient(90deg, transparent, black 10%, black 90%, transparent)';
+  }
+  
+  // Initialize with delay for accurate measurements
+  function initWithDelay() {
+    setTimeout(initMarquee, 100);
   }
   
   // Initialize on load
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initMarquee);
+    document.addEventListener('DOMContentLoaded', initWithDelay);
   } else {
-    initMarquee();
+    initWithDelay();
   }
   
   // Handle resize with debounce
   let resizeTimer;
   window.addEventListener('resize', function() {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(initMarquee, 250);
+    resizeTimer = setTimeout(initWithDelay, 250);
   });
   
   // Handle images loading
   const images = document.querySelectorAll('.logos-image');
   let imagesLoaded = 0;
+  let totalImages = images.length;
   
   function checkAllImagesLoaded() {
     imagesLoaded++;
-    if (imagesLoaded === images.length) {
-      initMarquee();
+    if (imagesLoaded === totalImages) {
+      initWithDelay();
     }
   }
   
-  if (images.length > 0) {
+  if (totalImages > 0) {
     images.forEach(img => {
       if (img.complete) {
         checkAllImagesLoaded();
@@ -1705,6 +1734,8 @@ a,
         img.addEventListener('error', checkAllImagesLoaded);
       }
     });
+  } else {
+    initWithDelay();
   }
 })();
 </script>
